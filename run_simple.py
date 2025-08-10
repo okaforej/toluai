@@ -5,6 +5,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, create_access_token
+from flask_restx import Api, Resource, fields
 import os
 from dotenv import load_dotenv
 
@@ -23,6 +24,66 @@ app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key')
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
 CORS(app, origins=['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:5177'])
+
+# Initialize Swagger/OpenAPI documentation
+api = Api(
+    app,
+    version='1.0.0',
+    title='ToluAI Risk Assessment API',
+    description='Insurance Risk Professional Assessment (IRPA) System API Documentation',
+    doc='/api/docs',
+    prefix='/api/v1',
+    authorizations={
+        'Bearer': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'JWT Authorization header using the Bearer scheme. Example: "Bearer {token}"'
+        }
+    },
+    security='Bearer'
+)
+
+# Define Swagger models
+login_model = api.model('Login', {
+    'email': fields.String(required=True, description='User email address'),
+    'password': fields.String(required=True, description='User password')
+})
+
+auth_response_model = api.model('AuthResponse', {
+    'access_token': fields.String(description='JWT access token'),
+    'user': fields.Raw(description='User information object')
+})
+
+assessment_model = api.model('Assessment', {
+    'id': fields.Integer(description='Assessment ID'),
+    'company_name': fields.String(description='Company name'),
+    'entity_name': fields.String(description='Entity name'),
+    'risk_score': fields.Float(description='Risk score (0-100)'),
+    'risk_category': fields.String(description='Risk category: low, medium, high, critical'),
+    'assessment_date': fields.String(description='Assessment date'),
+    'status': fields.String(description='Assessment status')
+})
+
+company_model = api.model('Company', {
+    'id': fields.Integer(description='Company ID'),
+    'name': fields.String(description='Company name'),
+    'industry': fields.String(description='Industry type'),
+    'revenue': fields.Float(description='Annual revenue'),
+    'employees': fields.Integer(description='Number of employees'),
+    'risk_profile': fields.String(description='Risk profile'),
+    'active_assessments': fields.Integer(description='Number of active assessments')
+})
+
+entity_model = api.model('Entity', {
+    'id': fields.Integer(description='Entity ID'),
+    'name': fields.String(description='Entity name'),
+    'company': fields.String(description='Company name'),
+    'type': fields.String(description='Entity type'),
+    'risk_score': fields.Float(description='Risk score'),
+    'status': fields.String(description='Entity status'),
+    'last_assessed': fields.String(description='Last assessment date')
+})
 
 # Mock authentication - no database needed for testing
 demo_users = {
@@ -46,41 +107,53 @@ demo_users = {
     }
 }
 
-# Routes
-@app.route('/api/v1/auth/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    
-    if not email or not password:
-        return jsonify({'error': 'Email and password required'}), 400
-    
-    # Mock authentication using demo users
-    user_data = demo_users.get(email)
-    
-    if user_data and user_data['password'] == password:
-        access_token = create_access_token(
-            identity=email,
-            additional_claims={
-                'user_id': user_data['id'],
-                'email': email,
-                'name': user_data['name'],
-                'roles': user_data['roles']
-            }
-        )
+# Authentication namespace
+auth_ns = api.namespace('auth', description='Authentication operations')
+
+@auth_ns.route('/login')
+class Login(Resource):
+    @auth_ns.expect(login_model)
+    @auth_ns.marshal_with(auth_response_model)
+    @auth_ns.doc('user_login', 
+                 responses={
+                     200: 'Login successful',
+                     400: 'Invalid credentials',
+                     401: 'Authentication failed'
+                 })
+    def post(self):
+        """Authenticate user and receive JWT token"""
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
         
-        return jsonify({
-            'access_token': access_token,
-            'user': {
-                'id': user_data['id'],
-                'email': email,
-                'name': user_data['name'],
-                'roles': user_data['roles']
-            }
-        }), 200
-    
-    return jsonify({'error': 'Invalid credentials'}), 401
+        if not email or not password:
+            return {'error': 'Email and password required'}, 400
+        
+        # Mock authentication using demo users
+        user_data = demo_users.get(email)
+        
+        if user_data and user_data['password'] == password:
+            access_token = create_access_token(
+                identity=email,
+                additional_claims={
+                    'user_id': user_data['id'],
+                    'email': email,
+                    'name': user_data['name'],
+                    'roles': user_data['roles']
+                }
+            )
+            
+            return {
+                'access_token': access_token,
+                'user': {
+                    'id': user_data['id'],
+                    'email': email,
+                    'name': user_data['name'],
+                    'roles': user_data['roles']
+                }
+            }, 200
+        
+        return {'error': 'Invalid credentials'}, 401
 
 @app.route('/api/v1/auth/me', methods=['GET'])
 def get_current_user():
