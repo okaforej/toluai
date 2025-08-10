@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}ToluAI - AI-Powered Insurance Risk Assessment Platform{% endblock %}
+
+{% block meta_description %}Transform your insurance underwriting with AI-powered risk assessment. Get accurate risk scores, detailed analytics, and actionable recommendations in minutes.{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-primary text-white py-5">
+    <div class="container">
+        <div class="row align-items-center min-vh-50">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">
+                    AI-Powered Insurance Risk Assessment
+                </h1>
+                <p class="lead mb-4">
+                    Transform your underwriting process with advanced artificial intelligence. 
+                    Get accurate risk scores, detailed analytics, and actionable recommendations in minutes, not hours.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="{{ url_for_security('register') }}" class="btn btn-light btn-lg">
+                        <i class="bi bi-person-plus me-2"></i>Start Free Trial
+                    </a>
+                    <a href="#features" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-play-circle me-2"></i>Learn More
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <img src="{{ url_for('static', filename='images/hero-dashboard.png') }}" 
+                     alt="ToluAI Dashboard" class="img-fluid rounded shadow-lg" 
+                     style="max-height: 400px;">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-3 col-6 mb-4">
+                <div class="h2 text-primary fw-bold">95%</div>
+                <p class="text-muted">Accuracy Rate</p>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="h2 text-primary fw-bold">5 min</div>
+                <p class="text-muted">Average Assessment</p>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="h2 text-primary fw-bold">$2M+</div>
+                <p class="text-muted">Claims Prevented</p>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="h2 text-primary fw-bold">500+</div>
+                <p class="text-muted">Insurance Professionals</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold mb-3">Why Choose ToluAI?</h2>
+            <p class="lead text-muted">Advanced AI technology meets insurance expertise</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="text-center h-100 p-4">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 64px; height: 64px;">
+                        <i class="bi bi-cpu h3 mb-0"></i>
+                    </div>
+                    <h4 class="mb-3">AI-Powered Analysis</h4>
+                    <p class="text-muted">
+                        Advanced machine learning algorithms analyze hundreds of risk factors 
+                        to provide accurate, data-driven risk assessments.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="text-center h-100 p-4">
+                    <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 64px; height: 64px;">
+                        <i class="bi bi-lightning-charge h3 mb-0"></i>
+                    </div>
+                    <h4 class="mb-3">Lightning Fast</h4>
+                    <p class="text-muted">
+                        Complete comprehensive risk assessments in under 5 minutes. 
+                        Streamline your underwriting process and make faster decisions.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="text-center h-100 p-4">
+                    <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 64px; height: 64px;">
+                        <i class="bi bi-graph-up-arrow h3 mb-0"></i>
+                    </div>
+                    <h4 class="mb-3">Actionable Insights</h4>
+                    <p class="text-muted">
+                        Get detailed recommendations and risk mitigation strategies. 
+                        Turn data into actionable business intelligence.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="text-center h-100 p-4">
+                    <div class="bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 64px; height: 64px;">
+                        <i class="bi bi-shield-check h3 mb-0"></i>
+                    </div>
+                    <h4 class="mb-3">Industry Expertise</h4>
+                    <p class="text-muted">
+                        Built by insurance professionals for insurance professionals. 
+                        Understand the nuances of different industries and risk factors.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="text-center h-100 p-4">
+                    <div class="bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 64px; height: 64px;">
+                        <i class="bi bi-people h3 mb-0"></i>
+                    </div>
+                    <h4 class="mb-3">Team Collaboration</h4>
+                    <p class="text-muted">
+                        Share assessments, track progress, and collaborate with your team. 
+                        Built for modern insurance workflows.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="text-center h-100 p-4">
+                    <div class="bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 64px; height: 64px;">
+                        <i class="bi bi-lock h3 mb-0"></i>
+                    </div>
+                    <h4 class="mb-3">Enterprise Security</h4>
+                    <p class="text-muted">
+                        Bank-level security with SOC 2 compliance. 
+                        Your data is encrypted, secure, and always protected.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold mb-3">How It Works</h2>
+            <p class="lead text-muted">Simple, powerful, effective</p>
+        </div>
+        
+        <div class="row g-4 text-center">
+            <div class="col-md-4">
+                <div class="position-relative">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 48px; height: 48px;">
+                        <strong>1</strong>
+                    </div>
+                    <h5>Input Client Data</h5>
+                    <p class="text-muted">
+                        Enter your client's business information, industry details, 
+                        and basic risk factors into our intuitive interface.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="position-relative">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 48px; height: 48px;">
+                        <strong>2</strong>
+                    </div>
+                    <h5>AI Analysis</h5>
+                    <p class="text-muted">
+                        Our advanced AI engine processes the data, analyzes patterns, 
+                        and calculates comprehensive risk scores in real-time.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="position-relative">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 48px; height: 48px;">
+                        <strong>3</strong>
+                    </div>
+                    <h5>Get Results</h5>
+                    <p class="text-muted">
+                        Receive detailed risk assessments, actionable recommendations, 
+                        and comprehensive reports ready for decision-making.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5 bg-primary text-white">
+    <div class="container text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h2 class="display-5 fw-bold mb-3">Ready to Transform Your Underwriting?</h2>
+                <p class="lead mb-4">
+                    Join hundreds of insurance professionals already using ToluAI 
+                    to make smarter, faster underwriting decisions.
+                </p>
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <a href="{{ url_for_security('register') }}" class="btn btn-light btn-lg">
+                        <i class="bi bi-rocket-takeoff me-2"></i>Start Free Trial
+                    </a>
+                    <a href="{{ url_for('main.contact') }}" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-chat-dots me-2"></i>Schedule Demo
+                    </a>
+                </div>
+                <p class="mt-3 mb-0">
+                    <small>No credit card required • 14-day free trial • Cancel anytime</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add smooth scrolling for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+});
+
+// Add scroll animation for feature cards
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+        }
+    });
+}, observerOptions);
+
+// Observe feature cards
+document.querySelectorAll('#features .col-lg-4').forEach(card => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    card.style.transition = 'all 0.6s ease-out';
+    observer.observe(card);
+});
+</script>
+{% endblock %}

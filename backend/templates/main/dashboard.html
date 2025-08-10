@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ToluAI{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Dashboard</h1>
+            <p class="text-muted mb-0">Welcome back, {{ current_user.name }}!</p>
+        </div>
+        <div>
+            <a href="{{ url_for('client.create') }}" class="btn btn-primary me-2">
+                <i class="bi bi-plus-lg me-1"></i>New Client
+            </a>
+            <a href="{{ url_for('assessment.create') }}" class="btn btn-success">
+                <i class="bi bi-graph-up me-1"></i>New Assessment
+            </a>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                <i class="bi bi-people text-primary h4 mb-0"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Clients</h6>
+                            <h3 class="mb-0">{{ stats.total_clients }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                                <i class="bi bi-graph-up text-success h4 mb-0"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Risk Assessments</h6>
+                            <h3 class="mb-0">{{ stats.recent_assessments }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                                <i class="bi bi-exclamation-triangle text-warning h4 mb-0"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">High Risk Clients</h6>
+                            <h3 class="mb-0">{{ stats.high_risk_clients }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info bg-opacity-10 rounded-3 p-3">
+                                <i class="bi bi-calendar-month text-info h4 mb-0"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">This Month</h6>
+                            <h3 class="mb-0">{{ stats.monthly_assessments }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- Risk Distribution Chart -->
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom-0">
+                    <h5 class="card-title mb-0">Risk Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="riskDistributionChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom-0">
+                    <h5 class="card-title mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('client.create') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-person-plus me-2"></i>Add New Client
+                        </a>
+                        <a href="{{ url_for('assessment.create') }}" class="btn btn-outline-success">
+                            <i class="bi bi-plus-circle me-2"></i>Create Assessment
+                        </a>
+                        <a href="{{ url_for('client.list') }}" class="btn btn-outline-info">
+                            <i class="bi bi-search me-2"></i>Browse Clients
+                        </a>
+                        <a href="{{ url_for('assessment.list') }}" class="btn btn-outline-warning">
+                            <i class="bi bi-file-earmark-text me-2"></i>View Reports
+                        </a>
+                    </div>
+                    
+                    <hr class="my-3">
+                    
+                    <!-- Recent Activity Summary -->
+                    <h6 class="text-muted">Recent Activity</h6>
+                    <ul class="list-unstyled small">
+                        {% for assessment in recent_assessments[:3] %}
+                        <li class="d-flex align-items-center mb-2">
+                            <span class="badge bg-{{ assessment.get_risk_color() }} me-2">{{ assessment.risk_category|title }}</span>
+                            <span class="text-truncate">{{ assessment.client.name }}</span>
+                        </li>
+                        {% else %}
+                        <li class="text-muted">No recent assessments</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4 mt-0">
+        <!-- Recent Clients -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom-0 d-flex align-items-center justify-content-between">
+                    <h5 class="card-title mb-0">Recent Clients</h5>
+                    <a href="{{ url_for('client.list') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_clients %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Industry</th>
+                                    <th>Risk Status</th>
+                                    <th>Added</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for client in recent_clients %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-2"
+                                                 style="width: 32px; height: 32px; font-size: 12px;">
+                                                {{ client.name[:2]|upper }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-medium">{{ client.name }}</div>
+                                                <small class="text-muted">{{ client.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ client.industry or 'Not Set' }}</span>
+                                    </td>
+                                    <td>
+                                        {% if client.risk_category %}
+                                        <span class="badge bg-{{ client.risk_category == 'low' and 'success' or client.risk_category == 'medium' and 'warning' or 'danger' }}">
+                                            {{ client.risk_category|title }}
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted small">No assessment</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-muted small">
+                                        {{ moment(client.created_at).fromNow() }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-people text-muted mb-3" style="font-size: 3rem;"></i>
+                        <h6 class="text-muted">No clients yet</h6>
+                        <p class="text-muted small">Add your first client to get started</p>
+                        <a href="{{ url_for('client.create') }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-lg me-1"></i>Add Client
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Assessments -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom-0 d-flex align-items-center justify-content-between">
+                    <h5 class="card-title mb-0">Recent Assessments</h5>
+                    <a href="{{ url_for('assessment.list') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_assessments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Client</th>
+                                    <th>Risk Score</th>
+                                    <th>Category</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assessment in recent_assessments %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <div class="fw-medium">{{ assessment.client.name }}</div>
+                                            <small class="text-muted">{{ assessment.client.industry or 'Industry not set' }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress me-2" style="width: 60px; height: 6px;">
+                                                <div class="progress-bar bg-{{ assessment.get_risk_color() }}" 
+                                                     style="width: {{ assessment.risk_score }}%"></div>
+                                            </div>
+                                            <span class="small">{{ assessment.get_risk_percentage() }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ assessment.get_risk_color() }}">
+                                            {{ assessment.risk_category|title }}
+                                        </span>
+                                    </td>
+                                    <td class="text-muted small">
+                                        {{ moment(assessment.assessment_date).fromNow() }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-graph-up text-muted mb-3" style="font-size: 3rem;"></i>
+                        <h6 class="text-muted">No assessments yet</h6>
+                        <p class="text-muted small">Create your first risk assessment</p>
+                        <a href="{{ url_for('assessment.create') }}" class="btn btn-success btn-sm">
+                            <i class="bi bi-plus-lg me-1"></i>New Assessment
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Risk Distribution Chart
+const ctx = document.getElementById('riskDistributionChart').getContext('2d');
+
+const riskData = {
+    {% for category, count in risk_distribution %}
+        '{{ category }}': {{ count }},
+    {% endfor %}
+};
+
+const chartData = {
+    labels: Object.keys(riskData).map(key => key.charAt(0).toUpperCase() + key.slice(1)),
+    datasets: [{
+        data: Object.values(riskData),
+        backgroundColor: [
+            '#28a745', // low - green
+            '#ffc107', // medium - yellow  
+            '#dc3545', // high - red
+            '#343a40'  // critical - dark
+        ],
+        borderWidth: 0
+    }]
+};
+
+new Chart(ctx, {
+    type: 'doughnut',
+    data: chartData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    usePointStyle: true,
+                    padding: 20
+                }
+            }
+        }
+    }
+});
+
+// Auto-refresh dashboard data every 5 minutes
+setInterval(() => {
+    // Could implement real-time updates here
+    console.log('Dashboard data refresh...');
+}, 300000);
+</script>
+{% endblock %}

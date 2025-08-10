@@ -1,23 +1,48 @@
 # ToluAI Insurance Risk Assessment Platform
 
-A comprehensive, production-ready Flask SaaS platform for AI-powered insurance risk assessment.
+![ToluAI Logo](https://via.placeholder.com/200x80/3b82f6/ffffff?text=ToluAI)
+
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0+-green.svg)](https://flask.palletsprojects.com/)
+[![React](https://img.shields.io/badge/React-18.2+-61dafb.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+A comprehensive, production-ready insurance risk assessment platform that leverages AI to analyze client risk profiles and generate actionable recommendations. Built with modern React frontend and Flask backend.
 
 ## 🚀 Features
 
-- **AI-Powered Risk Analysis**: Advanced ML algorithms for accurate risk scoring
-- **User Management**: Role-based access control with Flask-Security-Too
-- **Client Management**: Complete CRM for insurance clients
-- **Risk Assessments**: Detailed risk analysis with actionable recommendations
-- **REST API**: Full API with JWT authentication and rate limiting
-- **Admin Dashboard**: Comprehensive admin panel for system management
-- **Responsive Design**: Bootstrap 5 responsive UI
-- **Security Hardened**: HTTPS, CSRF protection, input validation, rate limiting
-- **Production Ready**: Docker, Nginx, PostgreSQL, Redis, CI/CD pipeline
+### 🎨 Modern React Frontend
+- **Google/Facebook-Style UI**: Clean, modern interface with professional design
+- **TypeScript & React 18**: Type-safe, performant frontend architecture
+- **Responsive Design**: Mobile-first design that scales perfectly
+- **Interactive Dashboards**: Real-time analytics with charts and visualizations
+- **Seamless User Experience**: Intuitive navigation and micro-interactions
+
+### 🤖 AI-Powered Backend
+- **Advanced Risk Assessment**: Multi-factor AI algorithms for accurate scoring
+- **Real-time Analysis**: Instant risk evaluation with confidence metrics
+- **Actionable Recommendations**: Priority-based mitigation strategies
+- **Comprehensive Reporting**: Detailed factor analysis and insights
+
+### 🔐 Enterprise Security
+- **JWT Authentication**: Secure token-based authentication with refresh
+- **Role-based Access**: Admin, Underwriter, and User permission levels
+- **API Rate Limiting**: Protection against abuse and DoS attacks
+- **CSRF Protection**: Secure form submissions and data handling
+- **Production Hardened**: Security headers, input validation, audit logging
+
+### 🚀 Production Features
+- **Full-Stack Architecture**: React frontend + Flask backend + Database
+- **REST API**: Complete CRUD operations with comprehensive endpoints
+- **Database Migrations**: Alembic-managed schema evolution
+- **Docker Ready**: Containerized deployment with Docker Compose
+- **Comprehensive Testing**: End-to-end verification and test coverage
 
 ## 🏗️ Architecture
 
 ```
-├── app/
+├── app/                         # Flask Backend
 │   ├── __init__.py              # Flask app factory
 │   ├── models/                  # Database models
 │   │   ├── user.py             # User and Role models
@@ -32,6 +57,16 @@ A comprehensive, production-ready Flask SaaS platform for AI-powered insurance r
 │   ├── ai/                      # AI risk engine
 │   ├── templates/               # Jinja2 templates
 │   └── static/                  # CSS, JS, images
+├── frontend/                    # React Frontend
+│   ├── src/
+│   │   ├── components/         # React components
+│   │   ├── pages/              # Page components
+│   │   ├── services/           # API client
+│   │   ├── hooks/              # Custom hooks
+│   │   ├── types/              # TypeScript types
+│   │   └── utils/              # Utility functions
+│   ├── package.json            # Frontend dependencies
+│   └── vite.config.ts          # Vite configuration
 ├── config/                      # Configuration classes
 ├── tests/                       # Test suite
 ├── migrations/                  # Database migrations
@@ -52,9 +87,12 @@ A comprehensive, production-ready Flask SaaS platform for AI-powered insurance r
 - **Queue**: Celery (ready for async tasks)
 
 ### Frontend
-- **UI Framework**: Bootstrap 5
-- **Charts**: Chart.js
-- **Icons**: Bootstrap Icons
+- **Framework**: React 18 with TypeScript
+- **UI Library**: Tailwind CSS with Headless UI
+- **State Management**: React Context + React Query
+- **Charts**: Recharts
+- **Icons**: Heroicons
+- **Build Tool**: Vite
 
 ### Security
 - **HTTPS**: Enforced with Flask-Talisman
@@ -75,8 +113,10 @@ A comprehensive, production-ready Flask SaaS platform for AI-powered insurance r
 
 ### Prerequisites
 - Python 3.9+
-- Docker & Docker Compose
+- Docker & Docker Compose (recommended) or PostgreSQL 15+
+- Node.js 16+ and npm
 - Git
+- Redis (for caching and background tasks)
 
 ### Local Development Setup
 
@@ -86,18 +126,29 @@ git clone https://github.com/your-org/toluai.git
 cd toluai
 ```
 
-2. **Copy environment file**
+2. **Setup PostgreSQL Database (Automatic)**
 ```bash
-cp .env.example .env
-# Edit .env with your configuration
+# Using Docker (recommended)
+./scripts/setup_postgres.sh docker
+
+# Or use Python auto-setup
+python scripts/check_postgres.py
+
+# For detailed setup options, see POSTGRES_SETUP.md
 ```
 
-3. **Using Docker Compose (Recommended)**
+3. **Copy environment file**
 ```bash
-docker-compose up -d
+cp .env.postgres .env
+# Edit .env with your configuration if needed
 ```
 
-4. **Or Manual Setup**
+4. **Using Docker Compose (Full Stack)**
+```bash
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+5. **Manual Backend Setup**
 ```bash
 # Create virtual environment
 python -m venv venv
@@ -106,24 +157,35 @@ source venv/bin/activate  # On Windows: venv\\Scripts\\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Set environment variables
-export FLASK_ENV=development
-export DATABASE_URI=postgresql://user:pass@localhost/toluai
-
-# Initialize database
+# The application will auto-detect and setup PostgreSQL on first run
+# Or manually initialize database
 flask db upgrade
 
 # Create admin user
 flask create-admin
 
 # Run development server
-flask run
+python run_simple.py  # or flask run
 ```
 
-5. **Access the application**
-- Web Interface: http://localhost:5000
-- API Documentation: http://localhost:5000/api/v1/docs
-- Admin Panel: http://localhost:5000/admin (admin@toluai.com / admin123)
+5. **Manual Frontend Setup**
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+6. **Access the application**
+- React Frontend: http://localhost:5173 (Modern UI)
+- Flask Backend: http://localhost:5001 (API server)
+- API Documentation: http://localhost:5001/api/v1/docs
+- Admin Panel: http://localhost:5001/admin (admin@toluai.com / Admin123!)
+- pgAdmin (if using Docker): http://localhost:5050 (admin@toluai.local / admin123)
 
 ## 🔧 Configuration
 
@@ -133,7 +195,12 @@ flask run
 |----------|-------------|---------|
 | `FLASK_ENV` | Environment (development/production) | development |
 | `SECRET_KEY` | Flask secret key | Random |
-| `DATABASE_URI` | PostgreSQL connection string | sqlite:///toluai.db |
+| `DATABASE_URI` | PostgreSQL connection string | postgresql://toluai_dev:pass@localhost:5432/toluai_dev |
+| `POSTGRES_HOST` | PostgreSQL host | localhost |
+| `POSTGRES_PORT` | PostgreSQL port | 5432 |
+| `POSTGRES_DB` | PostgreSQL database name | toluai_dev |
+| `POSTGRES_USER` | PostgreSQL user | toluai_dev |
+| `POSTGRES_PASSWORD` | PostgreSQL password | toluai_dev_pass123 |
 | `REDIS_URL` | Redis connection string | redis://localhost:6379 |
 | `MAIL_SERVER` | SMTP server | localhost |
 | `SENTRY_DSN` | Sentry error tracking | None |
@@ -317,6 +384,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 ### Documentation
+- [PostgreSQL Setup Guide](POSTGRES_SETUP.md)
+- [Development Setup](DEV_SETUP.md)
 - [API Documentation](docs/api.md)
 - [Deployment Guide](docs/deployment.md)
 - [Development Guide](docs/development.md)
