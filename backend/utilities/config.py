@@ -219,17 +219,28 @@ class Config:
     
     def get_sqlalchemy_config(self) -> Dict[str, Any]:
         """Get SQLAlchemy configuration dictionary."""
-        return {
+        config = {
             'SQLALCHEMY_DATABASE_URI': self.database.uri,
             'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-            'SQLALCHEMY_ENGINE_OPTIONS': {
-                'pool_size': self.database.pool_size,
-                'pool_pre_ping': self.database.pool_pre_ping,
-                'pool_recycle': self.database.pool_recycle,
-                'max_overflow': self.database.max_overflow,
-                'echo': self.database.echo
-            }
         }
+        
+        # Only add engine options if they're not None (for SQLite compatibility)
+        engine_options = {}
+        if self.database.pool_size is not None:
+            engine_options['pool_size'] = self.database.pool_size
+        if self.database.pool_pre_ping is not None:
+            engine_options['pool_pre_ping'] = self.database.pool_pre_ping
+        if self.database.pool_recycle is not None:
+            engine_options['pool_recycle'] = self.database.pool_recycle
+        if self.database.max_overflow is not None:
+            engine_options['max_overflow'] = self.database.max_overflow
+        if self.database.echo is not None:
+            engine_options['echo'] = self.database.echo
+            
+        if engine_options:
+            config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_options
+            
+        return config
     
     def get_jwt_config(self) -> Dict[str, Any]:
         """Get JWT configuration dictionary."""

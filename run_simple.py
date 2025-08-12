@@ -7,7 +7,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, create_access_token
 from flask_restx import Api, Resource, fields
 import os
+import sys
+import datetime
 from dotenv import load_dotenv
+
+# Add backend to path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Load environment variables
 load_dotenv()
@@ -179,6 +184,115 @@ def index():
 def health():
     return jsonify({'status': 'healthy', 'service': 'ToluAI Backend'}), 200
 
+# New IRPA CCI Scoring endpoint
+@app.route('/api/v2/irpa/calculate-score', methods=['POST'])
+def calculate_irpa_score():
+    """Calculate IRPA CCI score using the new multiplicative engine"""
+    from backend.services.scoring_functions import IRPAScoringFunctions, calculate_irpa_cci_score
+    
+    data = request.get_json()
+    
+    # Calculate scores using the new engine
+    scoring = IRPAScoringFunctions()
+    
+    # Get individual risk scores
+    industry_score = scoring.calculate_industry_risk_score(
+        industry_type=data.get('industry_type', 'Technology'),
+        operating_margin=data.get('operating_margin', 15),
+        employee_count=data.get('employee_count', 5000),
+        company_age=data.get('company_age', 10),
+        pe_ratio=data.get('pe_ratio', 25)
+    )
+    
+    professional_score = scoring.calculate_professional_risk_score(
+        education_level=data.get('education_level', "Bachelor's Degree"),
+        years_experience=data.get('years_experience', 8),
+        job_title=data.get('job_title', 'Senior Analyst'),
+        job_tenure=data.get('job_tenure', 3),
+        practice_field=data.get('practice_field', 'Technology'),
+        age=data.get('age', 35),
+        state=data.get('state', 'California'),
+        fico=data.get('fico_score', 720),
+        dti=data.get('dti_ratio', 28),
+        payment_history=data.get('payment_history', 95)
+    )
+    
+    # Calculate final IRPA score
+    final_scores = scoring.calculate_final_irpa_score(industry_score, professional_score)
+    
+    # Get risk category details
+    risk_categories = {
+        'critical_high': {'label': 'Critical High Risk', 'color': '#7c2d12', 'range': '90-100'},
+        'extremely_high': {'label': 'Extremely High Risk', 'color': '#991b1b', 'range': '80-89'},
+        'very_high': {'label': 'Very High Risk', 'color': '#dc2626', 'range': '70-79'},
+        'high': {'label': 'High Risk', 'color': '#ef4444', 'range': '50-69'},
+        'moderate': {'label': 'Moderate Risk', 'color': '#f59e0b', 'range': '30-50'},
+        'low': {'label': 'Low Risk', 'color': '#10b981', 'range': '20-30'},
+        'very_low': {'label': 'Very Low Risk', 'color': '#059669', 'range': '1-20'}
+    }
+    
+    category_info = risk_categories.get(final_scores['risk_category'], {})
+    
+    return jsonify({
+        'irpa_cci_score': final_scores['irpa_cci_score'],
+        'risk_category': final_scores['risk_category'],
+        'risk_category_label': category_info.get('label', 'Unknown'),
+        'risk_category_color': category_info.get('color', '#6b7280'),
+        'risk_category_range': category_info.get('range', 'N/A'),
+        'industry_component': final_scores['industry_component'],
+        'professional_component': final_scores['professional_component'],
+        'industry_weight': final_scores['industry_weight'],
+        'professional_weight': final_scores['professional_weight'],
+        'breakdown': {
+            'industry': {
+                'score': round(industry_score * 100, 2),
+                'factors': {
+                    'industry_type': scoring.industry_type_risk_score(data.get('industry_type', 'Technology')),
+                    'operating_margin': scoring.operating_margin_risk_score(data.get('operating_margin', 15)),
+                    'company_size': scoring.company_size_risk_score(data.get('employee_count', 5000)),
+                    'company_age': scoring.company_age_risk_score(data.get('company_age', 10)),
+                    'pe_ratio': scoring.pe_ratio_risk_score(data.get('pe_ratio', 25))
+                }
+            },
+            'professional': {
+                'score': round(professional_score * 100, 2),
+                'factors': {
+                    'education': scoring.education_risk_score(data.get('education_level', "Bachelor's Degree")),
+                    'experience': scoring.years_experience_risk_score(data.get('years_experience', 8)),
+                    'job_title': scoring.job_title_risk_score(data.get('job_title', 'Senior Analyst')),
+                    'job_tenure': scoring.job_tenure_risk_score(data.get('job_tenure', 3)),
+                    'practice_field': scoring.practice_field_risk_score(data.get('practice_field', 'Technology')),
+                    'age': scoring.age_risk_score(data.get('age', 35)),
+                    'state': scoring.state_risk_score(data.get('state', 'California')),
+                    'fico': scoring.fico_risk_score(data.get('fico_score', 720))['score'],
+                    'dti': scoring.dti_risk_score(data.get('dti_ratio', 28))['score'],
+                    'payment_history': scoring.payment_history_risk_score(data.get('payment_history', 95))['score']
+                }
+            }
+        },
+        'methodology': 'multiplicative_v2',
+        'timestamp': datetime.datetime.now().isoformat()
+    }), 200
+
+# Get risk category distribution
+@app.route('/api/v2/irpa/risk-distribution', methods=['GET'])
+def get_risk_distribution():
+    """Get distribution of assessments across 7-tier risk categories"""
+    return jsonify({
+        'distribution': {
+            'critical_high': {'count': 5, 'label': 'Critical High Risk', 'color': '#7c2d12', 'range': '90-100'},
+            'extremely_high': {'count': 12, 'label': 'Extremely High Risk', 'color': '#991b1b', 'range': '80-89'},
+            'very_high': {'count': 28, 'label': 'Very High Risk', 'color': '#dc2626', 'range': '70-79'},
+            'high': {'count': 45, 'label': 'High Risk', 'color': '#ef4444', 'range': '50-69'},
+            'moderate': {'count': 67, 'label': 'Moderate Risk', 'color': '#f59e0b', 'range': '30-50'},
+            'low': {'count': 89, 'label': 'Low Risk', 'color': '#10b981', 'range': '20-30'},
+            'very_low': {'count': 34, 'label': 'Very Low Risk', 'color': '#059669', 'range': '1-20'}
+        },
+        'total': 280,
+        'average_score': 42.5,
+        'timestamp': datetime.datetime.now().isoformat()
+    }), 200
+
 # Mock API endpoints for dashboard
 @app.route('/api/v2/irpa/insured-entities', methods=['GET'])
 def get_insured_entities():
@@ -206,10 +320,15 @@ def get_insured_entities():
 
 @app.route('/api/v2/irpa/assessments', methods=['GET'])
 def get_assessments():
+    from backend.services.scoring_functions import IRPAScoringFunctions
     import datetime
+    
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     status = request.args.get('status', None)
+    
+    # Use the new scoring engine for mock data
+    scoring = IRPAScoringFunctions()
     
     mock_assessments = [
         {
@@ -217,7 +336,7 @@ def get_assessments():
             'entity_id': 1,
             'entity_name': 'Acme Insurance Ltd',
             'risk_score': 45.5,
-            'risk_category': 'medium',
+            'risk_category': 'moderate',  # Using new 7-tier category
             'assessment_date': (datetime.datetime.now() - datetime.timedelta(days=1)).isoformat(),
             'status': 'completed',
             'assessor_name': 'John Smith',

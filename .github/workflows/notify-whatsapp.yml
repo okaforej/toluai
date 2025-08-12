@@ -1,0 +1,74 @@
+name: WhatsApp Notifications
+
+on:
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types:
+      - completed
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure' }}
+    
+    steps:
+    - name: Prepare Message
+      id: message
+      run: |
+        if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
+          STATUS="✅ SUCCESS"
+          COLOR="green"
+        else
+          STATUS="❌ FAILED"
+          COLOR="red"
+        fi
+        
+        MESSAGE="${STATUS} - ToluAI CI/CD Pipeline
+        
+        📦 Repository: ${{ github.repository }}
+        🔀 Branch: ${{ github.event.workflow_run.head_branch }}
+        💻 Commit: ${{ github.event.workflow_run.head_sha }}
+        👤 Author: ${{ github.actor }}
+        🕒 Time: $(date '+%Y-%m-%d %H:%M:%S')
+        
+        View run: ${{ github.event.workflow_run.html_url }}"
+        
+        # URL encode the message
+        ENCODED_MESSAGE=$(echo "$MESSAGE" | jq -sRr @uri)
+        echo "encoded_message=$ENCODED_MESSAGE" >> $GITHUB_OUTPUT
+    
+    # Option 1: WhatsApp Business API (Requires Meta setup)
+    - name: Send via WhatsApp Business API
+      if: ${{ secrets.WHATSAPP_API_TOKEN != '' }}
+      continue-on-error: true
+      run: |
+        curl -X POST \
+          "https://graph.facebook.com/v17.0/${{ secrets.WHATSAPP_PHONE_ID }}/messages" \
+          -H "Authorization: Bearer ${{ secrets.WHATSAPP_API_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "messaging_product": "whatsapp",
+            "to": "${{ secrets.WHATSAPP_RECIPIENT }}",
+            "type": "text",
+            "text": {
+              "body": "'"$(echo "${{ steps.message.outputs.encoded_message }}" | jq -sRr @uri)"'"
+            }
+          }'
+    
+    # Option 2: CallMeBot (Free, easier setup)
+    - name: Send via CallMeBot
+      if: ${{ secrets.CALLMEBOT_API_KEY != '' }}
+      continue-on-error: true
+      run: |
+        curl -X GET "https://api.callmebot.com/whatsapp.php?phone=${{ secrets.WHATSAPP_RECIPIENT }}&text=${{ steps.message.outputs.encoded_message }}&apikey=${{ secrets.CALLMEBOT_API_KEY }}"
+    
+    # Option 3: Twilio WhatsApp
+    - name: Send via Twilio
+      if: ${{ secrets.TWILIO_ACCOUNT_SID != '' }}
+      continue-on-error: true
+      run: |
+        curl -X POST https://api.twilio.com/2010-04-01/Accounts/${{ secrets.TWILIO_ACCOUNT_SID }}/Messages.json \
+          -u "${{ secrets.TWILIO_ACCOUNT_SID }}:${{ secrets.TWILIO_AUTH_TOKEN }}" \
+          --data-urlencode "From=whatsapp:${{ secrets.TWILIO_WHATSAPP_NUMBER }}" \
+          --data-urlencode "To=whatsapp:${{ secrets.WHATSAPP_RECIPIENT }}" \
+          --data-urlencode "Body=${{ steps.message.outputs.encoded_message }}"
