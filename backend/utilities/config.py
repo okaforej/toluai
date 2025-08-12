@@ -272,8 +272,14 @@ class TestingConfig(Config):
         super().__init__('testing')
         # Override settings for testing
         self.database.uri = 'sqlite:///:memory:'
+        # SQLite doesn't support these pool settings
+        self.database.pool_size = None
+        self.database.max_overflow = None
+        self.database.pool_pre_ping = False
+        self.database.pool_recycle = None
         self.security.jwt_access_token_expires = timedelta(minutes=15)
         self.WTF_CSRF_ENABLED = False
+        self.TESTING = True
 
 
 class ProductionConfig(Config):

@@ -7,9 +7,6 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
-# Import extensions from app for compatibility
-from backend.app import db, migrate
-
 def init_backend(app: Flask):
     """
     Initialize backend module with Flask app

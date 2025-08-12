@@ -3,8 +3,8 @@
 import pytest
 import tempfile
 import os
-from app import create_app, db
-from app.models import User, Role, Client, RiskAssessment
+from backend.app import create_app, db
+from backend.models import User, Role, Client, RiskAssessment
 from flask_security import hash_password
 from datetime import datetime
 
