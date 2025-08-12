@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -16,6 +16,7 @@ import RoleManagementPage from './pages/Admin/RoleManagementPage';
 import RuleManagementPage from './pages/Admin/RuleManagementPage';
 import ReferenceDataPage from './pages/ReferenceDataPage';
 import LoadingSpinner from './components/UI/LoadingSpinner';
+import { UIComponentsTest } from './test/UIComponentsTest';
 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -101,11 +102,31 @@ const AppRoutes: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  const [showTester, setShowTester] = useState(false);
+
+  useEffect(() => {
+    // Enable tester in development mode
+    if (process.env.NODE_ENV === 'development') {
+      setShowTester(true);
+    }
+    
+    // Allow toggling with keyboard shortcut Ctrl+Shift+T
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'T') {
+        setShowTester(prev => !prev);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
   return (
     <AuthProvider>
       <Router>
         <div className="min-h-screen bg-gray-50">
           <AppRoutes />
+          {showTester && <UIComponentsTest />}
           <Toaster
             position="top-right"
             toastOptions={{
