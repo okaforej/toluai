@@ -1,0 +1,42 @@
+# Development Dockerfile for ToluAI
+FROM python:3.11-slim as backend
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy backend requirements and install
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy backend code
+COPY . /app/
+
+# Expose backend port
+EXPOSE 5001
+
+# Frontend build stage
+FROM node:18-alpine as frontend
+
+WORKDIR /app/frontend
+
+# Copy package files
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy frontend code
+COPY frontend/ .
+
+# Expose frontend port
+EXPOSE 5173
+
+# Development command will be specified in docker-compose
