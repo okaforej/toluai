@@ -6,7 +6,7 @@
 
 ```bash
 git clone https://github.com/yourusername/toluai.git && cd toluai
-./setup.sh  # Choose option 3 (Hybrid) for best performance
+./setup.sh  # Fully automatic - works on brand new laptops!
 ```
 
 **That's it!** Access at http://localhost:5173 • Login: `admin@toluai.com` / `Admin123!`

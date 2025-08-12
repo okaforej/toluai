@@ -215,5 +215,5 @@ else
     echo -e "${RED}⚠ Setup needs attention${NC}"
     echo ""
     echo "To fix issues, run:"
-    echo "  ./setup_enhanced.sh"
+    echo "  ./setup.sh"
 fi

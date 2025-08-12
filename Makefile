@@ -19,25 +19,22 @@ help:
 	@echo "  make clean      - Clean temporary files"
 	@echo ""
 
-# One-click install (NEW - Enhanced version)
-quickstart:
-	@echo "🚀 Starting ToluAI Quick Setup..."
-	@chmod +x setup_enhanced.sh
-	@./setup_enhanced.sh
-
-# Legacy install (original script)
+# One-click install
 install:
-	@echo "🚀 Installing ToluAI dependencies..."
+	@echo "🚀 Starting ToluAI Setup..."
 	@chmod +x setup.sh
 	@./setup.sh
 
+# Quick setup alias
+quickstart: install
+
 # Verify setup
 verify:
-	@chmod +x verify-setup.sh
-	@./verify-setup.sh
+	@chmod +x verify.sh
+	@./verify.sh
 
 # Complete setup
-setup: quickstart
+setup: install
 	@echo "✅ Setup complete!"
 
 # Install backend dependencies
