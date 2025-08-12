@@ -5,10 +5,13 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly security scan
 
 env:
   PYTHON_VERSION: '3.11'
   NODE_VERSION: '18'
+  COVERAGE_THRESHOLD: '80'
 
 jobs:
   backend-tests:
@@ -41,10 +44,10 @@ jobs:
           - 6379:6379
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
     
@@ -60,14 +63,18 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest-cov
+        pip install pytest pytest-cov pytest-asyncio
     
     - name: Run linting
       run: |
-        pip install flake8 black isort
+        pip install flake8 black isort mypy
         black --check .
         isort --check-only .
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    
+    - name: Run type checking
+      run: |
+        mypy --ignore-missing-imports .
     
     - name: Run tests with coverage
       env:
@@ -76,7 +83,11 @@ jobs:
         REDIS_URL: redis://localhost:6379
         SECRET_KEY: test-secret-key
       run: |
-        pytest --cov=app --cov=backend --cov-report=xml --cov-report=html
+        pytest tests/ --cov=. --cov-report=xml --cov-report=html --cov-report=term
+    
+    - name: Check coverage threshold
+      run: |
+        coverage report --fail-under=${{ env.COVERAGE_THRESHOLD }}
     
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
@@ -84,16 +95,17 @@ jobs:
         file: ./coverage.xml
         flags: backend
         name: backend-coverage
+        fail_ci_if_error: true
 
   frontend-tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
@@ -111,12 +123,17 @@ jobs:
     - name: Run type checking
       working-directory: ./frontend
       run: |
-        npx tsc --noEmit
+        npm run type-check
     
-    - name: Run tests
+    - name: Run unit tests
       working-directory: ./frontend
       run: |
         npm test -- --coverage --watchAll=false
+    
+    - name: Check coverage threshold
+      working-directory: ./frontend
+      run: |
+        npx nyc check-coverage --lines ${{ env.COVERAGE_THRESHOLD }}
     
     - name: Build application
       working-directory: ./frontend
@@ -129,13 +146,139 @@ jobs:
         directory: ./frontend/coverage
         flags: frontend
         name: frontend-coverage
+        fail_ci_if_error: true
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: toluai_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Install backend dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: |
+        npm ci
+        npx playwright install --with-deps
+    
+    - name: Start backend server
+      env:
+        FLASK_ENV: testing
+        DATABASE_URI: postgresql://test:test@localhost:5432/toluai_test
+        SECRET_KEY: test-secret-key
+      run: |
+        python run.py &
+        sleep 5
+    
+    - name: Start frontend server
+      working-directory: ./frontend
+      run: |
+        npm run dev &
+        sleep 5
+    
+    - name: Run E2E tests
+      working-directory: ./frontend
+      run: |
+        npx playwright test
+    
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: playwright-report
+        path: frontend/playwright-report/
+        retention-days: 30
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [backend-tests]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: toluai_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest-integration
+    
+    - name: Run integration tests
+      env:
+        FLASK_ENV: testing
+        DATABASE_URI: postgresql://test:test@localhost:5432/toluai_test
+        REDIS_URL: redis://localhost:6379
+        SECRET_KEY: test-secret-key
+      run: |
+        pytest tests/integration/ -v --tb=short
 
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Run Trivy security scan
       uses: aquasecurity/trivy-action@master
@@ -144,6 +287,7 @@ jobs:
         scan-ref: '.'
         format: 'sarif'
         output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH,MEDIUM'
     
     - name: Upload Trivy results to GitHub Security
       uses: github/codeql-action/upload-sarif@v2
@@ -152,9 +296,16 @@ jobs:
     
     - name: Python security check
       run: |
-        pip install safety bandit
-        safety check
-        bandit -r app/ backend/ -f json -o bandit-report.json
+        pip install safety bandit pip-audit
+        pip-audit --desc
+        safety check --json
+        bandit -r . -f json -o bandit-report.json --exclude ./tests,./venv
+    
+    - name: Frontend security audit
+      working-directory: ./frontend
+      run: |
+        npm audit --audit-level=moderate
+        npx snyk test || true
     
     - name: Upload security reports
       uses: actions/upload-artifact@v3
@@ -164,36 +315,202 @@ jobs:
           trivy-results.sarif
           bandit-report.json
 
-  docker-build:
-    name: Docker Build
+  dependency-check:
+    name: Dependency Check
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+    
+    - name: Python dependency check
+      run: |
+        pip install pip-licenses pipdeptree
+        pip-licenses --format=csv > python-licenses.csv
+        pipdeptree --warn fail
+    
+    - name: Frontend dependency check
+      working-directory: ./frontend
+      run: |
+        npm ls --depth=0
+        npx license-checker --csv > frontend-licenses.csv
+        npm outdated || true
+    
+    - name: Upload dependency reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-reports
+        path: |
+          python-licenses.csv
+          frontend/frontend-licenses.csv
+
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    
+    - name: Code complexity analysis
+      run: |
+        pip install radon
+        radon cc . -s -nb
+        radon mi . -s
+    
+    - name: Frontend complexity analysis
+      working-directory: ./frontend
+      run: |
+        npx plato -r -d complexity-report src/
+
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Build frontend
+      working-directory: ./frontend
+      run: |
+        npm ci
+        npm run build
+    
+    - name: Run Lighthouse CI
+      uses: treosh/lighthouse-ci-action@v10
+      with:
+        configPath: './frontend/lighthouserc.js'
+        uploadArtifacts: true
+        temporaryPublicStorage: true
+    
+    - name: Bundle size check
+      working-directory: ./frontend
+      run: |
+        npx bundlesize --config bundlesize.config.json
+    
+    - name: Load testing with k6
+      run: |
+        docker run --rm -i grafana/k6 run --vus 10 --duration 30s - < tests/load/k6-script.js
+
+  database-migration:
+    name: Database Migration Check
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: toluai_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Check migrations
+      env:
+        DATABASE_URI: postgresql://test:test@localhost:5432/toluai_test
+      run: |
+        flask db upgrade
+        flask db check
+        flask db downgrade -1
+        flask db upgrade
+
+  docker-build:
+    name: Docker Build & Scan
+    runs-on: ubuntu-latest
+    needs: [e2e-tests, integration-tests, security-scan]
+    
+    steps:
+    - uses: actions/checkout@v4
     
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: toluai:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        outputs: type=docker,dest=/tmp/image.tar
+    
+    - name: Scan Docker image
+      uses: aquasecurity/trivy-action@master
+      with:
+        input: /tmp/image.tar
+        format: 'sarif'
+        output: 'docker-scan-results.sarif'
+    
+    - name: Upload Docker scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'docker-scan-results.sarif'
     
     - name: Log in to Docker Hub
-      uses: docker/login-action@v2
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
     
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v4
+    - name: Push Docker image
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: docker/build-push-action@v5
       with:
         context: .
         push: true
         tags: |
           ${{ secrets.DOCKER_USERNAME }}/toluai:latest
           ${{ secrets.DOCKER_USERNAME }}/toluai:${{ github.sha }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
 
-  deploy:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.toluai.com
+    
+    steps:
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add staging deployment commands
+
+  deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: [docker-build]
@@ -205,6 +522,17 @@ jobs:
     steps:
     - name: Deploy to production
       run: |
-        echo "Deploying to production server..."
-        # Add actual deployment commands here
-        # e.g., SSH to server, pull new image, restart services
+        echo "Deploying to production environment..."
+        # Add production deployment commands
+    
+    - name: Run smoke tests
+      run: |
+        curl -f https://toluai.com/health || exit 1
+    
+    - name: Notify deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        text: 'Production deployment completed'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      if: always()
