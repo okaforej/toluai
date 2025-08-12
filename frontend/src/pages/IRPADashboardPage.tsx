@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { mockInsuredEntities } from '../data/mockInsuredEntities';
 import RiskHeatMap from '../components/Charts/RiskHeatMap';
+import IRPAScoringPanel from '../components/IRPA/IRPAScoringPanel';
 
 interface DashboardStats {
   totalInsuredEntities: number;
@@ -363,6 +364,11 @@ const IRPADashboardPage: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* IRPA CCI Scoring Panel */}
+      <div className="mb-8">
+        <IRPAScoringPanel />
       </div>
 
       {/* Risk Heat Map */}

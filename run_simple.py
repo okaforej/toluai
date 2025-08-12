@@ -434,7 +434,7 @@ def get_dashboard_stats():
     }), 200
 
 @app.route('/api/v2/irpa/analytics/risk-distribution', methods=['GET'])
-def get_risk_distribution():
+def get_analytics_risk_distribution():
     return jsonify({
         'risk_distribution': {
             'low': 45,
