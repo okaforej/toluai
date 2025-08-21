@@ -1,0 +1,46 @@
+runtime: python39
+env: standard
+service: default
+
+instance_class: F2
+
+automatic_scaling:
+  target_cpu_utilization: 0.65
+  min_instances: 1
+  max_instances: 10
+  max_concurrent_requests: 80
+
+handlers:
+# API routes handled by Flask
+- url: /api/.*
+  script: auto
+  secure: always
+
+# Static files for frontend
+- url: /assets
+  static_dir: frontend/dist/assets
+  secure: always
+  expiration: "30d"
+  http_headers:
+    Cache-Control: "public, max-age=2592000"
+
+# All other routes serve the React app
+- url: /.*
+  static_files: frontend/dist/index.html
+  upload: frontend/dist/index.html
+  secure: always
+  http_headers:
+    Cache-Control: "no-cache, must-revalidate"
+
+env_variables:
+  ENVIRONMENT: "production"
+  FLASK_ENV: "production"
+  DATABASE_URL: "postgresql://toluai_user:ToluAI2024Prod!@/toluai_prod?host=/cloudsql/toluai-prod-1755383107:us-central1:toluai-db"
+  JWT_SECRET_KEY: "your-production-jwt-secret-key-change-this"
+  SECRET_KEY: "your-production-secret-key-change-this"
+  CORS_ORIGINS: "https://toluai-prod-1755383107.uc.r.appspot.com"
+
+beta_settings:
+  cloud_sql_instances: "toluai-prod-1755383107:us-central1:toluai-db"
+
+entrypoint: gunicorn -b :$PORT main:app --workers 2 --threads 8 --timeout 60

@@ -4,9 +4,32 @@
 
 ## 🚀 Quick Start (2 minutes)
 
+### macOS/Linux
 ```bash
 git clone https://github.com/yourusername/toluai.git && cd toluai
 ./setup.sh  # Fully automatic - works on brand new laptops!
+```
+
+### Windows
+
+**Option 1: PowerShell (Recommended)**
+```powershell
+git clone https://github.com/yourusername/toluai.git
+cd toluai
+.\setup_windows.ps1  # Run as Administrator if needed
+```
+
+**Option 2: Command Prompt**
+```cmd
+git clone https://github.com/yourusername/toluai.git
+cd toluai
+setup_windows.bat
+```
+
+**Option 3: Cross-Platform Python**
+```bash
+git clone https://github.com/yourusername/toluai.git && cd toluai
+python setup.py  # Works on Windows, macOS, and Linux
 ```
 
 **That's it!** Access at http://localhost:5173 • Login: `admin@toluai.com` / `Admin123!`

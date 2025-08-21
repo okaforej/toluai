@@ -415,19 +415,43 @@ EOF
     
     # Method 3: Use Docker as fallback
     if [ "$DB_SETUP_SUCCESS" = false ]; then
-        print_warning "Local PostgreSQL setup failed. Using Docker for database..."
+        print_warning "Local PostgreSQL setup failed. Checking Docker option..."
         if check_docker; then
-            docker run -d \
-                --name toluai-postgres \
-                -e POSTGRES_USER=toluai_dev \
-                -e POSTGRES_PASSWORD=toluai_dev_pass123 \
-                -e POSTGRES_DB=toluai_dev \
-                -p 5432:5432 \
-                postgres:${POSTGRES_VERSION}
-            
-            sleep 5
-            DB_SETUP_SUCCESS=true
-            print_success "PostgreSQL running in Docker"
+            # Check if port 5432 is already in use
+            if lsof -Pi :5432 -sTCP:LISTEN -t >/dev/null 2>&1; then
+                print_warning "Port 5432 is already in use. Checking existing PostgreSQL..."
+                # Try connecting to existing PostgreSQL with our credentials
+                if PGPASSWORD=toluai_dev_pass123 psql -h localhost -p 5432 -U toluai_dev -d toluai_dev -c "SELECT 1" &>/dev/null; then
+                    DB_SETUP_SUCCESS=true
+                    print_success "Connected to existing PostgreSQL on port 5432"
+                else
+                    print_error "Port 5432 is in use but cannot connect with expected credentials."
+                    print_status "Please either:"
+                    print_status "  1. Stop the existing PostgreSQL service: brew services stop postgresql"
+                    print_status "  2. Or manually create the database and user:"
+                    print_status "     CREATE USER toluai_dev WITH PASSWORD 'toluai_dev_pass123';"
+                    print_status "     CREATE DATABASE toluai_dev OWNER toluai_dev;"
+                    exit 1
+                fi
+            else
+                # Check if container already exists
+                if docker ps -a | grep -q toluai-postgres; then
+                    print_status "Removing existing toluai-postgres container..."
+                    docker rm -f toluai-postgres 2>/dev/null || true
+                fi
+                
+                docker run -d \
+                    --name toluai-postgres \
+                    -e POSTGRES_USER=toluai_dev \
+                    -e POSTGRES_PASSWORD=toluai_dev_pass123 \
+                    -e POSTGRES_DB=toluai_dev \
+                    -p 5432:5432 \
+                    postgres:${POSTGRES_VERSION}
+                
+                sleep 5
+                DB_SETUP_SUCCESS=true
+                print_success "PostgreSQL running in Docker"
+            fi
         else
             print_error "Could not setup database. Please install PostgreSQL or Docker."
             exit 1
@@ -490,9 +514,16 @@ initialize_app() {
     
     source venv/bin/activate
     
+    # Set database URL environment variable
+    export DATABASE_URL="postgresql://toluai_dev:toluai_dev_pass123@localhost:5432/toluai_dev"
+    export ENVIRONMENT="development"
+    
     # Create all tables
     print_status "Setting up database schema..."
     python -c "
+import os
+os.environ['DATABASE_URL'] = 'postgresql://toluai_dev:toluai_dev_pass123@localhost:5432/toluai_dev'
+os.environ['ENVIRONMENT'] = 'development'
 from backend.app import create_app, db
 app = create_app('development')
 with app.app_context():
@@ -503,12 +534,16 @@ with app.app_context():
     # Load reference data
     if [ -f "init_reference_data.py" ]; then
         print_status "Loading reference data..."
+        DATABASE_URL="postgresql://toluai_dev:toluai_dev_pass123@localhost:5432/toluai_dev" \
+        ENVIRONMENT="development" \
         python init_reference_data.py || print_warning "Reference data already loaded"
     fi
     
     # Create admin user
     if [ -f "init_auth_system.py" ]; then
         print_status "Creating admin user..."
+        DATABASE_URL="postgresql://toluai_dev:toluai_dev_pass123@localhost:5432/toluai_dev" \
+        ENVIRONMENT="development" \
         python init_auth_system.py || print_warning "Admin user already exists"
     fi
     
@@ -595,8 +630,10 @@ start_services() {
     lsof -ti:5001 | xargs kill -9 2>/dev/null || true
     lsof -ti:5173 | xargs kill -9 2>/dev/null || true
     
-    # Start backend
+    # Start backend with proper environment
     source venv/bin/activate
+    export DATABASE_URL="postgresql://toluai_dev:toluai_dev_pass123@localhost:5432/toluai_dev"
+    export ENVIRONMENT="development"
     python run_simple.py > backend.log 2>&1 &
     BACKEND_PID=$!
     

@@ -24,9 +24,9 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: '../app/static/react',
+    outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: true, // Generate sourcemaps for debugging
+    sourcemap: false, // Disable sourcemaps for production
   },
   define: {
     // Make sure environment variables are available

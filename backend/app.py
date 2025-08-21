@@ -154,6 +154,20 @@ def create_app(config_name='development'):
     # Register CLI commands
     register_cli_commands(app)
     
+    # Add health check endpoints
+    @app.route('/health')
+    @app.route('/api/health')
+    @app.route('/api/v1/health')
+    def health_check():
+        """Health check endpoint for monitoring"""
+        return {
+            'status': 'healthy',
+            'service': 'toluai-backend',
+            'timestamp': datetime.utcnow().isoformat(),
+            'environment': config_name,
+            'database': 'connected' if db.engine else 'disconnected'
+        }, 200
+    
     # Initialize RBAC system if enabled
     if app.config.get('USE_ENHANCED_RBAC', False):
         from backend.rbac_system import rbac_manager, create_rbac_routes

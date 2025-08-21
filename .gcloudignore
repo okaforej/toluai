@@ -1,0 +1,75 @@
+# This file specifies files that are *not* uploaded to Google Cloud Platform
+# using gcloud. It follows the same syntax as .gitignore, with the addition of
+# "#!include" directives (which insert the entries of the given .gitignore-style
+# file at that point).
+
+.gcloudignore
+.git
+.gitignore
+
+# Python pycache:
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Local development
+.env
+.env.local
+.env.*.local
+*.log
+*.sqlite
+*.db
+
+# Node modules (for frontend build)
+node_modules/
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Development files
+docker-compose.yml
+Dockerfile
+.dockerignore
+Makefile
+
+# macOS
+.DS_Store
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Test data
+tests/
+test_*.py
+*_test.py
+
+# Scripts not needed in production
+scripts/
+setup.sh
+monitor.sh
+verify-setup.sh
